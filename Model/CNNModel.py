@@ -12,7 +12,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Conv1D, MaxPool1D
+from tensorflow.keras.layers import Dense, Dropout, Conv1D, MaxPool1D, Embedding, Flatten
 
 
 # ==========================================
@@ -27,6 +27,7 @@ class CNNModel(tf.keras.Model):
         super(CNNModel, self).__init__()
         # Parameters
         self.vocab_size = vocab_size
+        self.embedding_size = 256
         self.text_latent_size = 64
         self.numerical_latent_size = 64
         self.batch_size = 32
@@ -34,8 +35,12 @@ class CNNModel(tf.keras.Model):
 
         # Model architecture
         self.text_module = Sequential([
+            Embedding(input_dim=self.vocab_size, output_dim=self.embedding_size, name="text_embedding"),
             Conv1D(16, 3, name="text_conv", activation="relu"),
             MaxPool1D(2, name="text_pool"),
+        ])
+        self.text_dense = Sequential([
+            Flatten(name="text_flatten"),
             Dense(self.text_latent_size, name="text_linear", activation="relu"),
             Dropout(0.25)
         ])
@@ -45,7 +50,7 @@ class CNNModel(tf.keras.Model):
         ])
         self.prediction_head = Sequential([
             Dense(256, activation="relu", name="prediction_linear1"),
-            # Dropout(0.3),
+            Dropout(0.25),
             Dense(self.label_size, activation="softmax", name="prediction_linear2")
         ])
         # Optimizer
@@ -55,6 +60,7 @@ class CNNModel(tf.keras.Model):
 
     def call(self, input_text, input_value):
         text_latent = self.text_module(input_text)
+        text_latent = self.text_dense(text_latent)
         numerical_latent = self.numerical_module(input_value)
         concat_latent = tf.concat([text_latent, numerical_latent], axis=1)
         prediction = self.prediction_head(concat_latent)
@@ -74,8 +80,8 @@ class CNNModel(tf.keras.Model):
 
 
 if __name__ == '__main__':
-    from Preprocess.PrepareData import get_data
-    train_text, test_text, train_numerical, test_numerical, train_label, test_label, vocab_dict = get_data(
+    from Preprocess.PrepareData import getIdxData
+    train_text, test_text, train_numerical, test_numerical, train_label, test_label, vocab_dict = getIdxData(
         "../data/binary_label_data.csv")
     vocab_size = len(vocab_dict.keys())
     print("Vocabulary size = {}".format(vocab_size))

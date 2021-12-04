@@ -8,7 +8,8 @@ import numpy as np
 import tensorflow as tf
 
 from Model.LinearModel import LinearModel
-from Preprocess.PrepareData import get_data
+from Model.CNNModel import CNNModel
+from Preprocess.PrepareData import getIdxData, getTFData
 
 
 def train(model, train_text, train_numerical, train_labels, num_epochs):
@@ -72,7 +73,12 @@ def visualizeTrainHistory(epoch_loss_list, epoch_acc_list):
 def main(data_filename, model_name, num_epochs=5):
     print("=" * 70)
     print("Running preprocessing...")
-    train_text, test_text, train_numerical, test_numerical, train_labels, test_labels, vocab_dict = get_data(data_filename)
+    if model_name == "linear":
+        train_text, test_text, train_numerical, test_numerical, train_labels, test_labels, vocab_dict = getTFData(data_filename)
+    elif model_name == "CNN":
+        train_text, test_text, train_numerical, test_numerical, train_labels, test_labels, vocab_dict = getIdxData(data_filename)
+    else:
+        raise NotImplemented("Not implemented model {}.".format(model_name))
     vocab_size = len(vocab_dict.keys())
     print("Vocabulary size = {}".format(vocab_size))
     label_size = train_labels.shape[1]
@@ -82,6 +88,8 @@ def main(data_filename, model_name, num_epochs=5):
     print("=" * 70)
     if model_name == "linear":
         model = LinearModel(vocab_size, label_size)
+    elif model_name == "CNN":
+        model = CNNModel(vocab_size, label_size)
     else:
         raise NotImplemented("The model {} is not implemented!".format(model_name))
     print("Start training...")
@@ -99,4 +107,5 @@ def main(data_filename, model_name, num_epochs=5):
 
 if __name__ == '__main__':
     data_filename = "./data/top10_label_data.csv"
-    main(data_filename, model_name="linear", num_epochs=20)
+    # main(data_filename, model_name="linear", num_epochs=20)
+    main(data_filename, model_name="CNN", num_epochs=10)
