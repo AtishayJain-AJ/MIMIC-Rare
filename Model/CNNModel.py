@@ -36,22 +36,29 @@ class CNNModel(tf.keras.Model):
         # Model architecture
         self.text_module = Sequential([
             Embedding(input_dim=self.vocab_size, output_dim=self.embedding_size, name="text_embedding"),
-            Conv1D(16, 3, name="text_conv", activation="relu"),
+            Conv1D(16, 3, name="text_conv", activation="relu", kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
             MaxPool1D(2, name="text_pool"),
+
+            Conv1D(16, 3, name="text_conv2", activation="relu", kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
+            MaxPool1D(2, name="text_pool2"),
         ])
         self.text_dense = Sequential([
             Flatten(name="text_flatten"),
-            Dense(self.text_latent_size, name="text_linear", activation="relu"),
-            Dropout(0.25)
+            Dense(self.text_latent_size, name="text_linear", activation="relu",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
+            Dropout(0.8)
         ])
-        self.numerical_module = Sequential([
-            Dense(self.numerical_latent_size, name="numerical_linear", activation="relu"),
-            Dropout(0.25)
-        ])
+        # self.numerical_module = Sequential([
+        #     Dense(self.numerical_latent_size, name="numerical_linear", activation="relu",
+        #           kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
+            # Dropout(0.8)
+        # ])
         self.prediction_head = Sequential([
-            Dense(256, activation="relu", name="prediction_linear1"),
-            Dropout(0.25),
-            Dense(self.label_size, activation="softmax", name="prediction_linear2")
+            # Dense(256, activation="relu", name="prediction_linear1",
+            #       kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
+            # Dropout(0.8),
+            Dense(self.label_size, activation="softmax", name="prediction_linear2",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.0001))
         ])
         # Optimizer
         self.optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-2)
@@ -61,8 +68,9 @@ class CNNModel(tf.keras.Model):
     def call(self, input_text, input_value):
         text_latent = self.text_module(input_text)
         text_latent = self.text_dense(text_latent)
-        numerical_latent = self.numerical_module(input_value)
-        concat_latent = tf.concat([text_latent, numerical_latent], axis=1)
+        # numerical_latent = self.numerical_module(input_value)
+        # concat_latent = tf.concat([text_latent, numerical_latent], axis=1)
+        concat_latent = tf.concat([text_latent, input_value], axis=1)
         prediction = self.prediction_head(concat_latent)
         return prediction
 

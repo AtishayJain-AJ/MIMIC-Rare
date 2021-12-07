@@ -47,7 +47,21 @@ def extractTopDataWithTrueValue():
     extracted_data.to_csv("../data/top10_label_data.csv")
 
 
+def extractTopNewData():
+    '''
+    Extract data of the top 10 most common ICD-9 labels.
+    '''
+    data = pd.read_pickle("../data/Final_data.pkl")
+    # select data of the top 10 most common ICD9 code
+    labels = data.icd9_code
+    label_sample_size = {each : len(np.where(labels == each)[0]) for each in np.unique(labels)}
+    label_sample_size = [(each, label_sample_size[each]) for each in label_sample_size]
+    label_sample_size = sorted(label_sample_size, key=lambda x: x[1])[::-1]
+    idx = np.where(labels.apply(lambda x: x in [each[0] for each in label_sample_size[:4]]) == True)
+    extracted_data = data.iloc[idx].reset_index(drop=True)
+    extracted_data.to_csv("../data/top4_label_data_new.csv")
 
 
 if __name__ == '__main__':
-    extractTopDataWithTrueValue()
+    # extractTopDataWithTrueValue()
+    extractTopNewData()

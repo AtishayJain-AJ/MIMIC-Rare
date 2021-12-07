@@ -13,6 +13,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, Dropout
+# from tensorflow_addons.layers import NoisyDense
+
 
 
 class LinearModel(tf.keras.Model):
@@ -21,24 +23,27 @@ class LinearModel(tf.keras.Model):
         super(LinearModel, self).__init__()
         # Parameters
         self.vocab_size = vocab_size
-        self.text_latent_size = 64
-        self.numerical_latent_size = 64
-        self.batch_size = 32
+        self.text_latent_size = 256
+        self.numerical_latent_size = 16
+        self.batch_size = 16
         self.label_size = label_size # the number of unique ICD9 codes
 
         # Model architecture
         self.text_module = Sequential([
-            Dense(self.text_latent_size, name="text_linear", activation="relu"),
-            # Dropout(0.1)
+            Dense(self.text_latent_size, name="text_linear", activation=tf.nn.relu,
+                  kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
+            Dropout(0.8)
         ])
-        self.numerical_module = Sequential([
-            Dense(self.numerical_latent_size, name="numerical_linear", activation="relu"),
-            # Dropout(0.1)
-        ])
+        # self.numerical_module = Sequential([
+        #     Dense(self.numerical_latent_size, name="numerical_linear", activation=tf.nn.relu,
+        #           kernel_regularizer=tf.keras.regularizers.l2(0.0001)),
+        #     Dropout(0.8)
+        # ])
         self.prediction_head = Sequential([
-            Dense(256, activation="relu"),
-            # Dropout(0.3),
-            Dense(self.label_size, activation="softmax")
+            # Dense(16, activation="relu"),
+            # Dropout(0.8),
+            Dense(self.label_size, activation="softmax",
+                  kernel_regularizer=tf.keras.regularizers.l2(0.0001))
         ])
         # Optimizer
         self.optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-2)
@@ -47,8 +52,9 @@ class LinearModel(tf.keras.Model):
 
     def call(self, input_text, input_value):
         text_latent = self.text_module(input_text)
-        numerical_latent = self.numerical_module(input_value)
-        concat_latent = tf.concat([text_latent, numerical_latent], axis=1)
+        # numerical_latent = self.numerical_module(input_value)
+        # concat_latent = tf.concat([text_latent, numerical_latent], axis=1)
+        concat_latent = tf.concat([text_latent, input_value], axis=1)
         prediction = self.prediction_head(concat_latent)
         return prediction
 

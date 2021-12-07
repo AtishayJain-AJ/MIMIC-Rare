@@ -70,7 +70,7 @@ def visualizeTrainHistory(epoch_loss_list, epoch_acc_list):
     plt.show()
 
 
-def main(data_filename, model_name, num_epochs=5):
+def main(data_filename, model_name, num_epochs=5, visualize=False):
     print("=" * 70)
     print("Running preprocessing...")
     if model_name == "linear":
@@ -99,13 +99,14 @@ def main(data_filename, model_name, num_epochs=5):
     if checkpoint_dir not in os.listdir("./checkpoint"):
         os.mkdir("./checkpoint/{}".format(checkpoint_dir))
     model.save("./checkpoint/{}".format(checkpoint_dir))
-    visualizeTrainHistory(epoch_loss_list, epoch_accuracy_list)
+    if visualize:
+        visualizeTrainHistory(epoch_loss_list, epoch_accuracy_list)
     print("=" * 70)
     print("Start testing...")
     evaluate(model, test_text, test_numerical, test_labels)
 
 
 if __name__ == '__main__':
-    data_filename = "./data/top10_label_data.csv"
-    # main(data_filename, model_name="linear", num_epochs=20)
-    main(data_filename, model_name="CNN", num_epochs=10)
+    data_filename = "./data/top5_label_data_new.csv"
+    main(data_filename, model_name="linear", num_epochs=10, visualize=False)
+    # main(data_filename, model_name="CNN", num_epochs=5, visualize=False)
